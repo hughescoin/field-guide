@@ -1,0 +1,491 @@
+<title>{{TITLE}}</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="{{DESCRIPTION}}">
+<!--
+  FIELD GUIDE TEMPLATE v1.0
+  This is the only design file. Every guide is built from it by build.py, which replaces
+  {{TITLE}}, {{DESCRIPTION}} and {{DATA}}. Change colors, type, spacing or section layouts
+  here, then run `python3 build.py --all` and every guide picks up the change.
+  Content never lives here: it lives in guides/<slug>.json (see reference/guide-format.md).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: long-form field guide. One ~70ch reading column with wide breakouts for diagrams
+   and tables. Each entity owns one route color reused in every chip, card, table header and
+   diagram path, like lines on a transit map. */
+:root{
+  --bg:#F4F6F8; --surface:#FFFFFF; --sunk:#E9EDF1; --line:#D3DAE1;
+  --ink:#141A21; --muted:#56616D; --faint:#8A95A1;
+  --accent:#1D6F86;
+  --good:#2E7D4F; --good-soft:#DFF1E6; --bad:#B42318; --bad-soft:#FBE3E0; --warn:#B86A00;
+  /* route colors: strong + soft tint */
+  --h-amber:#B86A00;  --h-amber-soft:#FBEBD3;
+  --h-magenta:#B2356F;--h-magenta-soft:#F8E0EA;
+  --h-teal:#1D6F86;   --h-teal-soft:#DCEFF4;
+  --h-green:#4F7A22;  --h-green-soft:#E5F0D8;
+  --h-blue:#2F5FC4;   --h-blue-soft:#E1E9FA;
+  --h-violet:#6B46C1; --h-violet-soft:#ECE5FA;
+  --h-ink:#141A21;    --h-ink-soft:#E3E7EC;
+  --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0E1216; --surface:#161C22; --sunk:#1D252D; --line:#2C3640;
+  --ink:#E8EDF2; --muted:#A3AEBA; --faint:#6F7B87; --accent:#5BC0D8;
+  --good:#6FD39A; --good-soft:#173324; --bad:#FF8A7A; --bad-soft:#3D1D1A; --warn:#F0A23A;
+  --h-amber:#F0A23A;  --h-amber-soft:#3A2A12;
+  --h-magenta:#EE7CAE;--h-magenta-soft:#3B1C2B;
+  --h-teal:#5BC0D8;   --h-teal-soft:#12313A;
+  --h-green:#9BCB63;  --h-green-soft:#22301A;
+  --h-blue:#86A8F5;   --h-blue-soft:#1A2642;
+  --h-violet:#B39DF2; --h-violet-soft:#2A2142;
+  --h-ink:#E8EDF2;    --h-ink-soft:#262E37;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0E1216; --surface:#161C22; --sunk:#1D252D; --line:#2C3640;
+  --ink:#E8EDF2; --muted:#A3AEBA; --faint:#6F7B87; --accent:#5BC0D8;
+  --good:#6FD39A; --good-soft:#173324; --bad:#FF8A7A; --bad-soft:#3D1D1A; --warn:#F0A23A;
+  --h-amber:#F0A23A;  --h-amber-soft:#3A2A12;
+  --h-magenta:#EE7CAE;--h-magenta-soft:#3B1C2B;
+  --h-teal:#5BC0D8;   --h-teal-soft:#12313A;
+  --h-green:#9BCB63;  --h-green-soft:#22301A;
+  --h-blue:#86A8F5;   --h-blue-soft:#1A2642;
+  --h-violet:#B39DF2; --h-violet-soft:#2A2142;
+  --h-ink:#E8EDF2;    --h-ink-soft:#262E37;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:0 64px}
+.wrap{max-width:1040px;margin:0 auto}
+.prose{max-width:70ch}
+h1,h2,h3{font-family:var(--display);line-height:1.1;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.4rem,6vw,4.2rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(1.6rem,3.4vw,2.3rem);font-weight:700;letter-spacing:-.01em}
+h3{font-size:1.2rem;font-weight:700}
+p{margin:0}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.eyebrow{font-family:var(--mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+code{font-family:var(--mono);font-size:.86em;background:var(--sunk);padding:.1em .35em;border-radius:4px}
+section{padding-block:56px 8px;display:flex;flex-direction:column;gap:20px;scroll-margin-top:16px}
+.intro{display:flex;flex-direction:column;gap:12px}
+.lede{font-size:1.15rem;color:var(--muted);max-width:62ch}
+.err{padding:24px;color:var(--bad)}
+
+/* entity color carrier: every .ent-* element sets --c and --soft */
+.ent{--c:var(--h-ink);--soft:var(--h-ink-soft)}
+/* role colors for things that aren't entities (a layer, a diagram node): pick a hue no entity uses */
+.hue-amber{--c:var(--h-amber);--soft:var(--h-amber-soft)} .hue-magenta{--c:var(--h-magenta);--soft:var(--h-magenta-soft)}
+.hue-teal{--c:var(--h-teal);--soft:var(--h-teal-soft)} .hue-green{--c:var(--h-green);--soft:var(--h-green-soft)}
+.hue-blue{--c:var(--h-blue);--soft:var(--h-blue-soft)} .hue-violet{--c:var(--h-violet);--soft:var(--h-violet-soft)}
+.hue-ink{--c:var(--h-ink);--soft:var(--h-ink-soft)}
+
+/* hero + on-this-page */
+header.hero{padding-block:56px 24px;display:flex;flex-direction:column;gap:22px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--mono);font-size:.78rem;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none;background:var(--c)}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;padding-block:14px;border-block:1px solid var(--line)}
+nav.toc a{font-size:.9rem;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line)}
+nav.toc a:hover{border-color:var(--ink)}
+
+/* layers */
+.stack{display:grid;gap:10px}
+.layer{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr) minmax(0,1.2fr);gap:18px;align-items:center;
+  background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--c);border-radius:10px;padding:16px 18px}
+.layer .tag{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--c)}
+.layer .name{font-family:var(--display);font-weight:700;font-size:1.15rem}
+.layer .who{color:var(--muted);font-size:.95rem}
+.layer .analogy{font-size:.95rem}
+.layer .analogy b{font-weight:600}
+@media (max-width:720px){.layer{grid-template-columns:minmax(0,1fr);gap:6px}}
+
+/* profile */
+.profile{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.profile-head{background:var(--soft);padding:22px 24px;display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-end;justify-content:space-between}
+.profile-head h2{color:var(--c)}
+.profile-head .one{max-width:52ch;font-size:1.02rem}
+.profile-body{padding:22px 24px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+@media (max-width:760px){.profile-body{grid-template-columns:minmax(0,1fr)}}
+.analogy-box{border:1px dashed var(--c);border-radius:10px;padding:14px 16px;background:var(--bg);display:flex;flex-direction:column;gap:4px}
+.analogy-box .eyebrow{color:var(--c)}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+ul.reasons{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+ul.reasons li{padding-left:22px;position:relative}
+ul.reasons li::before{content:"";position:absolute;left:4px;top:.62em;width:8px;height:8px;border-radius:2px;background:var(--c)}
+dl.terms{margin:0;display:grid;grid-template-columns:minmax(0,1fr);border-top:1px solid var(--line)}
+dl.terms div{padding:10px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:minmax(0,11.5em) minmax(0,1fr);gap:12px}
+dl.terms dt{font-family:var(--mono);font-size:.82rem;font-weight:500;color:var(--c)}
+dl.terms dd{margin:0;font-size:.93rem}
+@media (max-width:520px){dl.terms div{grid-template-columns:minmax(0,1fr);gap:2px}}
+.watch{background:var(--bad-soft);border-radius:10px;padding:12px 14px;font-size:.93rem}
+.watch .wl{color:var(--bad);font-weight:600}
+
+/* compare */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:.93rem}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--sunk)}
+thead th.ent{color:var(--c)}
+tbody th{font-weight:600;width:16%}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:0}
+
+/* simulator */
+.sim{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:16px}
+.scen{display:flex;flex-wrap:wrap;gap:8px}
+.scen button{font:inherit;font-size:.9rem;font-weight:500;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.scen button:hover{border-color:var(--ink)}
+.scen button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.diagram{overflow-x:auto}
+.diagram svg{display:block;width:100%;min-width:720px;height:auto}
+.node rect{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+.node text{font-family:var(--body);font-size:13px;fill:var(--ink)}
+.node .sub{font-family:var(--mono);font-size:10.5px;fill:var(--muted)}
+.node.on rect{stroke:var(--c);stroke-width:2.5;fill:var(--soft)}
+.node.fail rect{stroke:var(--bad);stroke-width:2.5;fill:var(--bad-soft)}
+.edge{fill:none;stroke:var(--line);stroke-width:2}
+.edge.on{stroke:var(--c);stroke-width:3.2;stroke-dasharray:8 6;animation:flow 1s linear infinite}
+.edge.fail{stroke:var(--bad);stroke-width:2.6;stroke-dasharray:3 5;animation:none}
+.elabel{font-family:var(--mono);font-size:10.5px;fill:var(--faint)}
+@keyframes flow{to{stroke-dashoffset:-28}}
+@media (prefers-reduced-motion: reduce){.edge.on{animation:none}}
+.narr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:760px){.narr{grid-template-columns:minmax(0,1fr)}}
+.narr ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
+.lesson{background:var(--sunk);border-radius:10px;padding:14px 16px;font-size:.95rem}
+.note{font-size:.88rem;color:var(--muted)}
+
+/* panels */
+.panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--line);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.panel ul{margin:0;padding-left:1.15em;display:flex;flex-direction:column;gap:8px}
+.tone-good{border-top-color:var(--good)} .tone-risk{border-top-color:var(--bad)} .tone-neutral{border-top-color:var(--faint)}
+
+/* before / after */
+.ba{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:820px){.ba{grid-template-columns:minmax(0,1fr)}}
+.flow{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.flow .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.box{border:1.5px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 11px;font-size:.88rem;font-weight:500}
+.box.ent{border-color:var(--c);background:var(--soft)}
+.arrow{color:var(--faint);font-family:var(--mono)}
+.bill{font-family:var(--mono);font-size:.76rem;color:var(--muted)}
+.hub{border:2px solid var(--c);background:var(--soft);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.hub .ht{font-family:var(--display);font-weight:700}
+.hub ul{margin:0;padding-left:1.1em;font-size:.86rem;display:flex;flex-direction:column;gap:3px}
+.caveat{border-left:4px solid var(--warn);background:var(--surface);padding:14px 16px;border-radius:0 10px 10px 0;font-size:.95rem}
+.callout{border-left:4px solid var(--faint);background:var(--surface);padding:14px 16px;border-radius:0 10px 10px 0;font-size:.95rem}
+.callout.tone-good{border-left-color:var(--good)} .callout.tone-risk{border-left-color:var(--bad)}
+
+/* questions */
+.qs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.q .ask{font-weight:600}
+.q .why{font-size:.88rem;color:var(--muted)}
+
+/* quiz */
+.quiz{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.qtop{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline;font-variant-numeric:tabular-nums}
+.qprompt{font-family:var(--display);font-size:1.2rem;font-weight:700;line-height:1.3}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opts button{font:inherit;text-align:left;padding:11px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.opts button:hover:not(:disabled){border-color:var(--ink)}
+.opts button.right{border-color:var(--good);background:var(--good-soft)}
+.opts button.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opts button:disabled{cursor:default}
+.explain{background:var(--sunk);border-radius:10px;padding:12px 14px;font-size:.95rem}
+.qnav{display:flex;gap:8px;justify-content:flex-end}
+.qnav button{font:inherit;font-weight:600;padding:9px 16px;border-radius:8px;border:0;background:var(--ink);color:var(--bg);cursor:pointer}
+.qnav button:disabled{opacity:.35;cursor:default}
+
+/* sources + footer */
+.sources ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
+footer{margin-top:40px;font-size:.85rem;color:var(--faint);border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:4px}
+</style>
+
+<div class="wrap" id="guide"></div>
+<noscript><p class="err">This guide needs JavaScript to display.</p></noscript>
+
+<script type="application/json" id="guide-data">{{DATA}}</script>
+<script>
+(function(){
+  "use strict";
+  var TEMPLATE_VERSION = "1.0";
+  var HUES = ["amber","magenta","teal","green","blue","violet","ink"];
+  var root = document.getElementById("guide");
+
+  function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]; }); }
+  /* inline markup: **bold**, `code`, [label](https://url) */
+  function md(s){
+    var out = esc(s);
+    out = out.replace(/`([^`]+)`/g, "<code>$1</code>");
+    out = out.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+    out = out.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    return out;
+  }
+  function list(x){ return x == null ? [] : (Array.isArray(x) ? x : [x]); }
+  function paras(x, cls){ return list(x).map(function(p){ return '<p class="' + (cls || "prose") + '">' + md(p) + "</p>"; }).join(""); }
+  function slug(s){ return String(s).toLowerCase().replace(/[^a-z0-9-]/g, "-"); }
+
+  var G;
+  try { G = JSON.parse(document.getElementById("guide-data").textContent); }
+  catch(e){ root.innerHTML = '<p class="err">This guide\'s content could not be read: ' + esc(e.message) + "</p>"; return; }
+
+  /* entity color classes */
+  var ENT = {};
+  var css = "";
+  list(G.entities).forEach(function(e){
+    var id = slug(e.id), hue = HUES.indexOf(e.hue) >= 0 ? e.hue : "ink";
+    ENT[e.id] = { name: e.name, cls: "ent ent-" + id };
+    css += ".ent.ent-" + id + "{--c:var(--h-" + hue + ");--soft:var(--h-" + hue + "-soft)}";
+  });
+  /* placed after the main stylesheet (which sits in <body>), so these rules win */
+  var st = document.createElement("style"); st.textContent = css; root.parentNode.insertBefore(st, root);
+  function ec(id){ return id && ENT[id] ? ENT[id].cls : "ent"; }
+  /* color class for any object with an optional entity or hue */
+  function cc(o){
+    if (o && o.entity && ENT[o.entity]) return ENT[o.entity].cls;
+    if (o && o.hue && HUES.indexOf(o.hue) >= 0) return "ent hue-" + o.hue;
+    return "ent";
+  }
+  function ename(id){ return id && ENT[id] ? ENT[id].name : id; }
+
+  function head(s){
+    var h = "";
+    if (s.eyebrow) h += '<span class="eyebrow">' + md(s.eyebrow) + "</span>";
+    if (s.title) h += "<h2>" + md(s.title) + "</h2>";
+    if (s.intro) h += '<div class="intro">' + paras(s.intro) + "</div>";
+    return h;
+  }
+
+  var R = {};
+
+  R.layers = function(s){
+    return head(s) + '<div class="stack">' + list(s.layers).map(function(l){
+      return '<div class="layer ' + cc(l) + '"><div><div class="tag">' + md(l.tag) + '</div><div class="name">' + md(l.name) +
+        '</div></div><div class="who">' + md(l.who) + '</div><div class="analogy">' + md(l.analogy) + "</div></div>";
+    }).join("") + "</div>" + (s.outro ? paras(s.outro) : "");
+  };
+
+  R.profile = function(s){
+    var name = s.name || ename(s.entity);
+    var h = s.eyebrow ? '<span class="eyebrow">' + md(s.eyebrow) + "</span>" : "";
+    h += '<article class="profile ' + ec(s.entity) + '"><div class="profile-head"><h2>' + md(name) + '</h2><p class="one">' + md(s.oneLiner) + "</p></div>";
+    h += '<div class="profile-body"><div class="col">';
+    h += '<div class="analogy-box"><span class="eyebrow">Analogy</span><p>' + md(s.analogy) + "</p></div>";
+    h += "<h3>" + md(s.whyTitle || "Why people choose it") + '</h3><ul class="reasons">' + list(s.why).map(function(w){ return "<li>" + md(w) + "</li>"; }).join("") + "</ul>";
+    h += '</div><div class="col">';
+    h += "<h3>" + md(s.termsTitle || "Terms you'll hear") + '</h3><dl class="terms">' + list(s.terms).map(function(t){
+      return "<div><dt>" + md(t[0]) + "</dt><dd>" + md(t[1]) + "</dd></div>"; }).join("") + "</dl>";
+    if (s.watch) h += '<div class="watch"><span class="wl">' + md(s.watchLabel || "Where it hurts:") + "</span> " + md(s.watch) + "</div>";
+    h += "</div></div></article>";
+    return h;
+  };
+
+  R.compare = function(s){
+    var cols = list(s.columns);
+    var h = head(s) + '<div class="tablewrap"><table><thead><tr><th></th>' + cols.map(function(c){
+      return '<th class="' + ec(c) + '">' + md(ename(c)) + "</th>"; }).join("") + "</tr></thead><tbody>";
+    h += list(s.rows).map(function(r){
+      return "<tr><th>" + md(r.label) + "</th>" + list(r.cells).map(function(c){ return "<td>" + md(c) + "</td>"; }).join("") + "</tr>";
+    }).join("");
+    return h + "</tbody></table></div>";
+  };
+
+  function anchor(n, side, shift){
+    shift = shift || 0;
+    switch (side){
+      case "left":   return [n.x, n.y + n.h/2 + shift];
+      case "top":    return [n.x + n.w/2 + shift, n.y];
+      case "bottom": return [n.x + n.w/2 + shift, n.y + n.h];
+      default:       return [n.x + n.w, n.y + n.h/2 + shift];
+    }
+  }
+  function edgePath(e, nodes){
+    if (e.d) return { d: e.d, mid: null };
+    var a = nodes[e.from], b = nodes[e.to];
+    var fs = e.fromSide || "right", ts = e.toSide || "left";
+    var p = anchor(a, fs, e.fromShift), q = anchor(b, ts, e.toShift);
+    var hz = function(s){ return s === "left" || s === "right"; };
+    var d;
+    if (hz(fs) && hz(ts)){
+      if (p[1] === q[1]) d = "M" + p[0] + " " + p[1] + " L" + q[0] + " " + q[1];
+      else { var cx = (p[0] + q[0]) / 2; d = "M" + p[0] + " " + p[1] + " C" + cx + " " + p[1] + " " + cx + " " + q[1] + " " + q[0] + " " + q[1]; }
+    } else if (!hz(fs) && !hz(ts)){
+      if (p[0] === q[0]) d = "M" + p[0] + " " + p[1] + " L" + q[0] + " " + q[1];
+      else { var cy = (p[1] + q[1]) / 2; d = "M" + p[0] + " " + p[1] + " C" + p[0] + " " + cy + " " + q[0] + " " + cy + " " + q[0] + " " + q[1]; }
+    } else {
+      var k = hz(fs) ? [q[0], p[1]] : [p[0], q[1]];
+      d = "M" + p[0] + " " + p[1] + " Q" + k[0] + " " + k[1] + " " + q[0] + " " + q[1];
+    }
+    return { d: d, mid: [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2 - 6] };
+  }
+
+  R.simulator = function(s, sid){
+    var dg = s.diagram || {}, W = dg.width || 900, H = dg.height || 400;
+    var nodes = {}; list(dg.nodes).forEach(function(n){ nodes[n.id] = n; });
+    var svg = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc(s.title || "Architecture diagram") + '">';
+    list(dg.edges).forEach(function(e){
+      var p = edgePath(e, nodes);
+      svg += '<path class="edge ' + cc(e) + '" id="' + sid + "-x-" + slug(e.id) + '" d="' + esc(p.d) + '"/>';
+      if (e.label){
+        var at = e.labelAt || p.mid || [0, 0];
+        svg += '<text class="elabel" x="' + at[0] + '" y="' + at[1] + '">' + esc(e.label) + "</text>";
+      }
+    });
+    list(dg.labels).forEach(function(l){ svg += '<text class="elabel" x="' + l.x + '" y="' + l.y + '">' + esc(l.text) + "</text>"; });
+    list(dg.nodes).forEach(function(n){
+      var cx = n.x + n.w/2, hasSub = !!n.sub;
+      svg += '<g class="node ' + cc(n) + '" id="' + sid + "-x-" + slug(n.id) + '"><rect x="' + n.x + '" y="' + n.y + '" width="' + n.w + '" height="' + n.h + '" rx="10"/>';
+      svg += '<text x="' + cx + '" y="' + (n.y + n.h/2 + (hasSub ? -3 : 4)) + '" text-anchor="middle">' + esc(n.label) + "</text>";
+      if (hasSub) svg += '<text class="sub" x="' + cx + '" y="' + (n.y + n.h/2 + 14) + '" text-anchor="middle">' + esc(n.sub) + "</text>";
+      svg += "</g>";
+    });
+    svg += "</svg>";
+    var sc = list(s.scenarios);
+    var h = head(s) + '<div class="sim"><div class="scen" role="group" aria-label="Scenarios">' + sc.map(function(c, i){
+      return '<button type="button" id="' + sid + "-s-" + slug(c.id) + '" data-i="' + i + '" aria-pressed="' + (i === 0) + '">' + esc(c.label) + "</button>";
+    }).join("") + '</div><div class="diagram">' + svg + '</div><div class="narr"><div><ol></ol></div><div class="lesson"></div></div>';
+    if (s.note) h += '<p class="note">' + md(s.note) + "</p>";
+    return h + "</div>";
+  };
+  function wireSimulator(sec, s, sid){
+    var sc = list(s.scenarios);
+    var els = Array.prototype.slice.call(sec.querySelectorAll(".node,.edge"));
+    var ol = sec.querySelector(".narr ol"), lesson = sec.querySelector(".lesson");
+    var btns = sec.querySelectorAll(".scen button");
+    function show(i){
+      var c = sc[i]; if (!c) return;
+      els.forEach(function(el){ el.classList.remove("on", "fail"); });
+      list(c.on).forEach(function(id){ var el = document.getElementById(sid + "-x-" + slug(id)); if (el) el.classList.add("on"); });
+      list(c.fail).forEach(function(id){ var el = document.getElementById(sid + "-x-" + slug(id)); if (el){ el.classList.remove("on"); el.classList.add("fail"); } });
+      ol.innerHTML = list(c.steps).map(function(t){ return "<li>" + md(t) + "</li>"; }).join("");
+      lesson.innerHTML = md(c.lesson);
+      Array.prototype.forEach.call(btns, function(b){ b.setAttribute("aria-pressed", String(Number(b.dataset.i) === i)); });
+    }
+    Array.prototype.forEach.call(btns, function(b){ b.addEventListener("click", function(){ show(Number(b.dataset.i)); }); });
+    show(0);
+  }
+
+  R.panels = function(s){
+    return head(s) + '<div class="panels">' + list(s.panels).map(function(p){
+      return '<div class="panel tone-' + esc(p.tone || "neutral") + '"><h3>' + md(p.title) + "</h3><ul>" +
+        list(p.items).map(function(i){ return "<li>" + md(i) + "</li>"; }).join("") + "</ul></div>";
+    }).join("") + "</div>";
+  };
+
+  function flowItem(it){
+    if (typeof it === "string") return '<span class="box">' + md(it) + "</span>";
+    if (it.arrow) return '<span class="arrow" aria-hidden="true">' + esc(it.arrow) + "</span>";
+    return '<span class="box ' + (it.entity || it.hue ? cc(it) : "") + '">' + md(it.text) + "</span>";
+  }
+  function flow(f){
+    if (!f) return "";
+    var h = '<div class="flow"><span class="eyebrow">' + md(f.label) + "</span>";
+    list(f.rows).forEach(function(r){
+      if (r && r.hub){
+        h += '<div class="hub ' + cc(r.hub.entity || r.hub.hue ? r.hub : { entity: "vercel" }) + '"><span class="ht">' + md(r.hub.title) + "</span><ul>" +
+          list(r.hub.items).map(function(i){ return "<li>" + md(i) + "</li>"; }).join("") + "</ul></div>";
+      } else h += '<div class="row">' + list(r).map(flowItem).join("") + "</div>";
+    });
+    if (f.footer) h += '<span class="bill">' + md(f.footer) + "</span>";
+    return h + "</div>";
+  }
+  R.beforeAfter = function(s){
+    return head(s) + '<div class="ba">' + flow(s.before) + flow(s.after) + "</div>" + (s.caveat ? '<div class="caveat">' + md(s.caveat) + "</div>" : "");
+  };
+
+  R.questions = function(s){
+    return head(s) + '<div class="qs">' + list(s.items).map(function(q){
+      return '<div class="q"><span class="ask">' + md(q.ask) + '</span><span class="why">' + md(q.why) + "</span></div>";
+    }).join("") + "</div>";
+  };
+
+  R.quiz = function(s, sid){
+    return head(s) + '<div class="quiz"><div class="qtop"><span class="eyebrow qcount"></span><span class="eyebrow qscore"></span></div>' +
+      '<div class="qprompt" aria-live="polite"></div><div class="opts"></div><div class="explain" hidden></div>' +
+      '<div class="qnav"><button type="button" class="qnext" id="' + sid + '-next" disabled>Next question</button></div></div>';
+  };
+  function wireQuiz(sec, s, sid){
+    var Q = list(s.questions), i = 0, score = 0;
+    var P = sec.querySelector(".qprompt"), O = sec.querySelector(".opts"), E = sec.querySelector(".explain"),
+        N = sec.querySelector(".qnext"), C = sec.querySelector(".qcount"), S = sec.querySelector(".qscore");
+    function render(){
+      if (i >= Q.length){
+        C.textContent = "Done"; P.textContent = "You scored " + score + " of " + Q.length + ".";
+        O.innerHTML = ""; E.hidden = false;
+        E.textContent = score === Q.length ? "All of them. You're ready to whiteboard this with a customer." : "Scroll back to the section on any you missed, then try again.";
+        N.textContent = "Start over"; N.disabled = false; return;
+      }
+      var q = Q[i];
+      C.textContent = "Question " + (i + 1) + " of " + Q.length; S.textContent = "Score " + score;
+      P.innerHTML = md(q.prompt); E.hidden = true; N.disabled = true;
+      N.textContent = i === Q.length - 1 ? "See results" : "Next question";
+      O.innerHTML = "";
+      list(q.options).forEach(function(t, j){
+        var b = document.createElement("button"); b.type = "button"; b.id = sid + "-q" + i + "o" + j; b.innerHTML = md(t);
+        b.addEventListener("click", function(){
+          Array.prototype.forEach.call(O.querySelectorAll("button"), function(x, k){ x.disabled = true; if (k === q.answer) x.classList.add("right"); });
+          if (j === q.answer){ score++; E.innerHTML = "<b>Right.</b> " + md(q.explain); }
+          else { b.classList.add("wrong"); E.innerHTML = "<b>Not quite.</b> " + md(q.explain); }
+          S.textContent = "Score " + score; E.hidden = false; N.disabled = false;
+        });
+        O.appendChild(b);
+      });
+    }
+    N.addEventListener("click", function(){ if (i >= Q.length){ i = 0; score = 0; } else { i++; } render(); });
+    render();
+  }
+
+  R.prose = function(s){
+    var h = head(s);
+    if (s.callout) h += '<div class="callout tone-' + esc(s.callout.tone || "neutral") + '">' + md(s.callout.text) + "</div>";
+    return h;
+  };
+
+  /* ---------- assemble ---------- */
+  var m = G.meta || {}, hero = G.hero || {};
+  var out = '<header class="hero"><span class="eyebrow">' + md(m.eyebrow) + "</span><h1>" + md(hero.headline || m.title) + "</h1>";
+  if (hero.lede) out += '<p class="lede">' + md(hero.lede) + "</p>";
+  if (hero.chips) out += '<div class="chips">' + list(hero.chips).map(function(c){
+    return '<span class="chip ' + ec(c) + '"><span class="dot"></span>' + md(ename(c)) + "</span>"; }).join("") + "</div>";
+  out += "</header>";
+
+  var secs = list(G.sections).map(function(s, i){
+    return { s: s, id: slug(s.id || (s.type + "-" + (i + 1))) };
+  });
+  var toc = secs.filter(function(x){ return x.s.nav; }).map(function(x){ return '<a href="#' + x.id + '">' + md(x.s.nav) + "</a>"; });
+  if (list(G.sources).length) toc.push('<a href="#sources">Sources</a>');
+  if (toc.length) out += '<nav class="toc" aria-label="On this page"><span class="eyebrow">On this page</span>' + toc.join("") + "</nav>";
+
+  secs.forEach(function(x){
+    var fn = R[x.s.type];
+    out += '<section id="' + x.id + '">' + (fn ? fn(x.s, x.id) : '<p class="err">Unknown section type: ' + esc(x.s.type) + "</p>") + "</section>";
+  });
+
+  if (list(G.sources).length){
+    out += '<section class="sources" id="sources"><span class="eyebrow">Sources</span><ol>' + list(G.sources).map(function(src){
+      return '<li><a href="' + esc(src.url) + '" target="_blank" rel="noopener">' + md(src.title) + "</a></li>"; }).join("") + "</ol></section>";
+  }
+  function niceDate(s){
+    var p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || "");
+    if (!p) return esc(s);
+    return new Date(+p[1], +p[2] - 1, +p[3]).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  }
+  out += "<footer><span>" + (m.researched ? "Researched " + niceDate(m.researched) + ". " : "") + md(m.footer || "") + "</span>" +
+    "<span>Field guide template v" + TEMPLATE_VERSION + "</span></footer>";
+  root.innerHTML = out;
+
+  secs.forEach(function(x){
+    var sec = document.getElementById(x.id);
+    if (x.s.type === "simulator") wireSimulator(sec, x.s, x.id);
+    if (x.s.type === "quiz") wireQuiz(sec, x.s, x.id);
+  });
+})();
+</script>

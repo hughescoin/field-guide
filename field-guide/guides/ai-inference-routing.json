@@ -1,0 +1,867 @@
+{
+  "meta": {
+    "slug": "ai-inference-routing",
+    "title": "Who Cooks Your Tokens",
+    "description": "Visual field guide to AWS Bedrock, Fireworks AI and OpenRouter, how a customer's routing stack combines them, and where Vercel AI Gateway fits.",
+    "eyebrow": "Field guide · AI inference routing · Nov 2026",
+    "researched": "2026-11-19",
+    "footer": "Prices and fees change often; confirm current numbers on each vendor's pricing page before quoting them to a customer.",
+    "published_url": "https://claude.ai/artifact/LKQApod83MxRifbvwzwEVx"
+  },
+  "entities": [
+    {
+      "id": "bedrock",
+      "name": "AWS Bedrock",
+      "hue": "amber"
+    },
+    {
+      "id": "fireworks",
+      "name": "Fireworks AI",
+      "hue": "magenta"
+    },
+    {
+      "id": "openrouter",
+      "name": "OpenRouter",
+      "hue": "teal"
+    },
+    {
+      "id": "budget",
+      "name": "Homegrown budgets",
+      "hue": "green"
+    },
+    {
+      "id": "vercel",
+      "name": "Vercel AI Gateway",
+      "hue": "ink"
+    }
+  ],
+  "hero": {
+    "headline": "Who cooks your tokens?",
+    "lede": "Your customer sends every AI request through OpenRouter, Fireworks, a Bedrock fallback and their own budget rules. That sounds like four competing products. They aren't. Each one sits at a different layer, and once you see the layers, the architecture makes sense.",
+    "chips": [
+      "bedrock",
+      "fireworks",
+      "openrouter",
+      "budget",
+      "vercel"
+    ]
+  },
+  "sections": [
+    {
+      "type": "layers",
+      "id": "layers",
+      "nav": "Mental model",
+      "eyebrow": "The mental model",
+      "title": "Think of it as a restaurant district",
+      "intro": "A model is a recipe. Somebody has to own the kitchen that cooks it, somebody has to get the order to the right kitchen, and somebody has to decide how much each team is allowed to spend on dinner. Every product in your customer's stack does exactly one of those jobs, sometimes a little of two.",
+      "layers": [
+        {
+          "entity": "budget",
+          "tag": "Layer 4 · Policy",
+          "name": "Budget profiles",
+          "who": "Homegrown code in your customer's app",
+          "analogy": "**The company expense policy.** Marketing gets $200 a day for dinners, engineering gets more, interns get the cheap menu."
+        },
+        {
+          "entity": "openrouter",
+          "tag": "Layer 3 · Routing",
+          "name": "Router / gateway",
+          "who": "OpenRouter, Vercel AI Gateway",
+          "analogy": "**The delivery app.** One app, hundreds of restaurants. If one is closed, it quietly orders from another."
+        },
+        {
+          "hue": "blue",
+          "tag": "Layer 2 · Hosting",
+          "name": "Inference provider",
+          "who": "Fireworks, Bedrock, Together, the model labs' own APIs",
+          "analogy": "**The kitchen.** Owns the GPUs (the stoves) and actually cooks the tokens. Speed and price are decided here."
+        },
+        {
+          "hue": "violet",
+          "tag": "Layer 1 · Model",
+          "name": "The model itself",
+          "who": "Claude, GPT, Llama, Qwen, DeepSeek, a customer's fine-tune",
+          "analogy": "**The recipe.** The same Llama recipe can be cooked in many kitchens, at different speeds and prices."
+        }
+      ],
+      "outro": "That last line is the key idea. **Open-weight models** (Llama, Qwen, DeepSeek, GPT-OSS) can be hosted by anyone, so many kitchens compete to serve them. **Closed models** (Claude, GPT-5.x) are only served by the lab itself or by a licensed partner like Bedrock. Routing exists because the same recipe is on many menus."
+    },
+    {
+      "type": "profile",
+      "id": "bedrock",
+      "nav": "Bedrock",
+      "entity": "bedrock",
+      "eyebrow": "Kitchen #1",
+      "oneLiner": "AWS's managed service for calling foundation models (Claude, Llama, Amazon Nova, Mistral, OpenAI models and more) through one AWS API, inside the customer's AWS account.",
+      "analogy": "**The restaurant inside your corporate campus.** You're already badged in (IAM), the food never leaves the building (PrivateLink, data stays in AWS), and the bill goes on the company account you were already paying (your AWS commit). The menu isn't always the newest or cheapest in town, but security already approved it.",
+      "why": [
+        "**It spends money they already committed.** Bedrock usage, including Claude, counts against existing AWS spend commitments, so no new vendor contract or procurement cycle.",
+        "**Security review is already done.** Access runs through IAM, every call is logged in CloudTrail, and PrivateLink keeps traffic off the public internet.",
+        "**Data residency.** You pick the region that processes the data. AWS processes it and doesn't share it with the model provider.",
+        "**Closed frontier models with AWS controls.** It's one of the few places to get Claude under an AWS contract. As of Aug 2026 it also serves OpenAI's GPT 5.6 models natively.",
+        "**Extras that live in the account.** Guardrails (content and PII filtering), Knowledge Bases (managed RAG over S3) and Agents."
+      ],
+      "terms": [
+        [
+          "On-demand",
+          "Pay per token, shared capacity, subject to per-model token quotas. The default."
+        ],
+        [
+          "Cross-region inference",
+          "An \"inference profile\" that spreads requests across regions for more throughput. **Geo** stays within a geography (like US). **Global** uses any commercial region and, for OpenAI models, is priced lower per token."
+        ],
+        [
+          "Provisioned Throughput",
+          "Reserved, dedicated capacity at a fixed price for a term. It can't be deleted before the term ends. Think \"reserved tables.\""
+        ],
+        [
+          "Custom Model Import",
+          "Bring your own open-weight fine-tune (for example Llama, Qwen3 or GPT-OSS) and serve it on Bedrock."
+        ],
+        [
+          "Mantle",
+          "Bedrock's OpenAI-compatible endpoint, so OpenAI-style client code can call Bedrock."
+        ],
+        [
+          "Claude Platform on AWS",
+          "A separate offering run by Anthropic and billed through AWS Marketplace. Data is processed outside the AWS boundary. Don't confuse it with Claude on Bedrock."
+        ]
+      ],
+      "watch": "throttling on on-demand quotas, regional model availability, and new models sometimes landing on Bedrock later than on the lab's own API. That's why teams often treat it as the safe default or the fallback, and use something faster or cheaper up front."
+    },
+    {
+      "type": "profile",
+      "id": "fireworks",
+      "nav": "Fireworks",
+      "entity": "fireworks",
+      "eyebrow": "Kitchen #2",
+      "oneLiner": "A specialist inference platform for open-weight models. It's built for speed and low cost, with fine-tuning and the ability to serve many customized variants of one model cheaply.",
+      "analogy": "**A high-volume specialist kitchen that only cooks open recipes.** It has custom-built stoves (its FireAttention serving engine) that cook faster than standard equipment. It can also make hundreds of seasoned variations of one base dish for different customers, all on the same stove, at the price of the plain dish. No Claude or GPT on this menu.",
+      "why": [
+        "**Speed.** Its proprietary serving stack (custom CUDA kernels plus quantization) is consistently among the fastest for open models. That matters for real-time and agentic apps.",
+        "**Price.** Serverless per-token rates start around $0.10 per 1M tokens for small models, and batch jobs bill at 50% of serverless.",
+        "**Customization that scales.** **Multi-LoRA** serves hundreds of fine-tuned adapters on one base model at base-model prices. That's perfect for a SaaS company with one tune per customer.",
+        "**Train and serve in one place.** Fine-tune, then deploy the checkpoint on the same platform. Cursor, Cresta and Genspark are public customers.",
+        "**OpenAI-compatible API.** Swapping it in is usually a base URL and model name change."
+      ],
+      "terms": [
+        [
+          "Serverless",
+          "Shared, pay-per-token endpoints for popular models. Has adaptive rate limits, so expect 429s when you spike."
+        ],
+        [
+          "On-demand deployment",
+          "Your own dedicated GPUs, billed per GPU-second. Roughly single digits to about $20 per GPU-hour depending on the chip. Region-restricted deployments cost a premium."
+        ],
+        [
+          "Reserved capacity",
+          "Guaranteed throughput backed by an SLA, for steady production traffic."
+        ],
+        [
+          "LoRA",
+          "A small \"seasoning\" file layered on a base model. It's much cheaper to train and store than a full copy."
+        ],
+        [
+          "Multi-LoRA",
+          "Many LoRAs batched onto one base deployment at the same time, so cost doesn't grow with the number of fine-tunes."
+        ],
+        [
+          "Batch inference",
+          "Asynchronous jobs at half price. Good for evals, backfills and enrichment."
+        ]
+      ],
+      "watch": "open models only. Serverless limits can throttle bursts. A pricing tracker reports that billing moved to prepaid in July 2026, where a zero balance pauses serverless, deployments and training together. If that's true for your customer, it's a concrete reason to have a fallback. Confirm it with them."
+    },
+    {
+      "type": "profile",
+      "id": "openrouter",
+      "nav": "OpenRouter",
+      "entity": "openrouter",
+      "eyebrow": "The delivery app",
+      "oneLiner": "A hosted router. One OpenAI-style API and one key reach hundreds of models across dozens of providers, with automatic fallbacks between providers. It doesn't run GPUs itself.",
+      "analogy": "**A food delivery app.** You order \"Llama 3.3 70B\" and the app decides which kitchen cooks it (Fireworks, Together, DeepInfra...). Menu prices are the kitchen's own. The app makes money on a fee when you load your wallet. If a kitchen is closed, it reroutes your order.",
+      "why": [
+        "**Breadth on day one.** Every new model shows up behind the same API. That's great for experiments and long-tail models.",
+        "**Uptime by pooling providers.** By default it load-balances across the top providers for a model and retries on the next one if a call fails.",
+        "**Pass-through pricing.** Inference costs the same as going to the provider directly. The fee is on credit purchases (listed at 5.5% pay-as-you-go as of Aug 2026).",
+        "**Knobs.** Per-request provider controls like `order`, `only`, `allow_fallbacks` and `sort` (price, throughput, latency), plus shortcuts like `:nitro` (fastest) and `:floor` (cheapest)."
+      ],
+      "terms": [
+        [
+          "Provider routing",
+          "Choosing which kitchen serves one specific model."
+        ],
+        [
+          "Model fallbacks",
+          "Trying a different model entirely when the first one fails."
+        ],
+        [
+          "BYOK",
+          "\"Bring your own key.\" Calls bill to your own provider account. After a plan allowance, OpenRouter charges a 5% fee, taken from OpenRouter credits."
+        ],
+        [
+          "Auto Router",
+          "`openrouter/auto` picks a model for the prompt."
+        ],
+        [
+          "ZDR",
+          "Zero Data Retention routing, which only uses providers that don't keep prompts."
+        ]
+      ],
+      "watch": "with BYOK plus fallbacks on, a failed BYOK call can silently complete on OpenRouter-funded capacity and charge OpenRouter credits instead. That leaves three money paths to reconcile. It's also one more vendor in the data path for security review."
+    },
+    {
+      "type": "compare",
+      "id": "compare",
+      "nav": "Compare",
+      "eyebrow": "Side by side",
+      "title": "Same request, three very different businesses",
+      "columns": [
+        "bedrock",
+        "fireworks",
+        "openrouter"
+      ],
+      "rows": [
+        {
+          "label": "What it is",
+          "cells": [
+            "Cloud provider's managed model service",
+            "Specialist inference and fine-tuning platform",
+            "Router across many providers"
+          ]
+        },
+        {
+          "label": "Runs GPUs?",
+          "cells": [
+            "Yes (AWS)",
+            "Yes (its own fleet)",
+            "No, forwards to providers"
+          ]
+        },
+        {
+          "label": "Models",
+          "cells": [
+            "Closed and open: Claude, GPT 5.6, Nova, Llama, Mistral, imports",
+            "Open-weight only, plus your fine-tunes",
+            "Nearly everything, through other kitchens"
+          ]
+        },
+        {
+          "label": "Buyer's main reason",
+          "cells": [
+            "Governance, data in AWS, burn AWS commit",
+            "Speed, cost, cheap customization",
+            "Breadth, uptime, one API"
+          ]
+        },
+        {
+          "label": "How it bills",
+          "cells": [
+            "Per token, or reserved Provisioned Throughput, on the AWS bill",
+            "Per token (serverless) or per GPU-second (deployments)",
+            "Provider list price plus a fee on credit purchases"
+          ]
+        },
+        {
+          "label": "Classic weak spot",
+          "cells": [
+            "Quotas, slower to get new models",
+            "No closed models, rate limits",
+            "Extra hop, extra vendor, billing paths"
+          ]
+        },
+        {
+          "label": "Typical role in a stack",
+          "cells": [
+            "Safe default or fallback",
+            "Fast, cheap hot path",
+            "Front door and long-tail access"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "simulator",
+      "id": "customer",
+      "nav": "Request flow",
+      "eyebrow": "Your customer's stack",
+      "title": "Follow a request through it",
+      "intro": "Pick a scenario. The highlighted path shows where the request goes and why. The colors match each product above.",
+      "diagram": {
+        "width": 900,
+        "height": 400,
+        "nodes": [
+          {
+            "id": "app",
+            "label": "Customer app",
+            "sub": "request + team id",
+            "x": 20,
+            "y": 185,
+            "w": 120,
+            "h": 56
+          },
+          {
+            "id": "budget",
+            "label": "Budget profiles",
+            "sub": "homegrown policy",
+            "x": 180,
+            "y": 185,
+            "w": 140,
+            "h": 56,
+            "entity": "budget"
+          },
+          {
+            "id": "deny",
+            "label": "Blocked / cheaper",
+            "sub": "model swapped in",
+            "x": 180,
+            "y": 318,
+            "w": 140,
+            "h": 56,
+            "entity": "budget"
+          },
+          {
+            "id": "router",
+            "label": "Routing logic",
+            "sub": "homegrown rules",
+            "x": 360,
+            "y": 185,
+            "w": 140,
+            "h": 56
+          },
+          {
+            "id": "or",
+            "label": "OpenRouter",
+            "sub": "picks a provider",
+            "x": 560,
+            "y": 60,
+            "w": 150,
+            "h": 56,
+            "entity": "openrouter"
+          },
+          {
+            "id": "other",
+            "label": "Other providers",
+            "sub": "Together, labs…",
+            "x": 760,
+            "y": 20,
+            "w": 125,
+            "h": 48,
+            "entity": "openrouter"
+          },
+          {
+            "id": "fw",
+            "label": "Fireworks",
+            "sub": "open models, tunes",
+            "x": 760,
+            "y": 185,
+            "w": 125,
+            "h": 56,
+            "entity": "fireworks"
+          },
+          {
+            "id": "br",
+            "label": "Bedrock",
+            "sub": "inside AWS",
+            "x": 760,
+            "y": 320,
+            "w": 125,
+            "h": 56,
+            "entity": "bedrock"
+          }
+        ],
+        "edges": [
+          {
+            "id": "app-budget",
+            "from": "app",
+            "to": "budget",
+            "entity": "budget"
+          },
+          {
+            "id": "budget-router",
+            "from": "budget",
+            "to": "router",
+            "entity": "budget"
+          },
+          {
+            "id": "budget-deny",
+            "from": "budget",
+            "to": "deny",
+            "fromSide": "bottom",
+            "toSide": "top",
+            "entity": "budget",
+            "label": "deny or downgrade",
+            "labelAt": [
+              258,
+              284
+            ]
+          },
+          {
+            "id": "router-or",
+            "from": "router",
+            "to": "or",
+            "fromShift": -10,
+            "entity": "openrouter",
+            "label": "via OpenRouter",
+            "labelAt": [
+              540,
+              140
+            ]
+          },
+          {
+            "id": "or-other",
+            "from": "or",
+            "to": "other",
+            "fromShift": -10,
+            "entity": "openrouter"
+          },
+          {
+            "id": "or-fw",
+            "from": "or",
+            "to": "fw",
+            "fromShift": 10,
+            "toShift": -10,
+            "entity": "openrouter"
+          },
+          {
+            "id": "router-fw",
+            "from": "router",
+            "to": "fw",
+            "fromShift": 5,
+            "toShift": 5,
+            "entity": "fireworks",
+            "label": "direct",
+            "labelAt": [
+              585,
+              211
+            ]
+          },
+          {
+            "id": "router-br",
+            "from": "router",
+            "to": "br",
+            "fromShift": 15,
+            "entity": "bedrock",
+            "label": "fallback / pinned",
+            "labelAt": [
+              520,
+              292
+            ]
+          },
+          {
+            "id": "fw-br",
+            "from": "fw",
+            "to": "br",
+            "fromSide": "bottom",
+            "toSide": "top",
+            "entity": "bedrock",
+            "label": "fallback",
+            "labelAt": [
+              830,
+              286
+            ]
+          }
+        ]
+      },
+      "scenarios": [
+        {
+          "id": "normal",
+          "label": "Everyday request",
+          "on": [
+            "app",
+            "budget",
+            "router",
+            "or",
+            "fw",
+            "app-budget",
+            "budget-router",
+            "router-or",
+            "or-fw"
+          ],
+          "fail": [],
+          "steps": [
+            "App sends a request tagged with the team's budget profile.",
+            "Budget code checks the team still has room. It does.",
+            "Routing logic sends general traffic to OpenRouter.",
+            "OpenRouter picks the cheapest healthy provider for that open model, which is often Fireworks."
+          ],
+          "lesson": "**Note the irony:** the request may land on Fireworks even though the customer also integrates Fireworks directly. OpenRouter is just reselling access to the same kitchen."
+        },
+        {
+          "id": "tuned",
+          "label": "Customer's fine-tune",
+          "on": [
+            "app",
+            "budget",
+            "router",
+            "fw",
+            "app-budget",
+            "budget-router",
+            "router-fw"
+          ],
+          "fail": [],
+          "steps": [
+            "App asks for the customer's own fine-tuned model.",
+            "Budget check passes.",
+            "Routing logic sends it straight to their Fireworks account, because only that account hosts the fine-tune (for example a LoRA on a shared base model)."
+          ],
+          "lesson": "**Why direct?** A fine-tune lives in one account on one platform. A general router can't reach it unless it supports BYOK to that exact deployment."
+        },
+        {
+          "id": "outage",
+          "label": "Fireworks fails",
+          "on": [
+            "app",
+            "budget",
+            "router",
+            "br",
+            "app-budget",
+            "budget-router",
+            "fw-br"
+          ],
+          "fail": [
+            "fw",
+            "router-fw"
+          ],
+          "steps": [
+            "Request heads to Fireworks as usual.",
+            "Fireworks returns a 429 (rate limit), times out, or the account balance hits zero.",
+            "Routing logic falls back to Bedrock, which is a separate vendor, separate capacity and governed by AWS."
+          ],
+          "lesson": "**The catch:** Bedrock probably serves a different model (for example Claude instead of a Llama fine-tune). The answer still comes back, but its style, format and cost can change. Ask how they test that."
+        },
+        {
+          "id": "budget",
+          "label": "Team over budget",
+          "on": [
+            "app",
+            "budget",
+            "deny",
+            "app-budget",
+            "budget-deny"
+          ],
+          "fail": [],
+          "steps": [
+            "App sends a request for a team that has used up today's allowance.",
+            "Budget code blocks it, or rewrites it to a cheaper model profile.",
+            "Nothing reaches a provider at full price."
+          ],
+          "lesson": "**Hard part:** knowing spend in real time across three billing systems. That's usually an estimate from token counts times a price table the customer maintains themselves."
+        },
+        {
+          "id": "sensitive",
+          "label": "Regulated data",
+          "on": [
+            "app",
+            "budget",
+            "router",
+            "br",
+            "app-budget",
+            "budget-router",
+            "router-br"
+          ],
+          "fail": [],
+          "steps": [
+            "App flags the request as containing regulated or customer-confidential data.",
+            "Routing logic pins it to Bedrock and skips OpenRouter entirely.",
+            "Processing stays inside AWS, under IAM, CloudTrail and the chosen region."
+          ],
+          "lesson": "**Why Bedrock here:** it's the only kitchen in this stack that is already inside the customer's security perimeter, and it bills against their AWS commit."
+        }
+      ],
+      "note": "This is the most likely shape based on your description. The real topology (which layer decides what, and in what order) is the first thing to confirm in discovery."
+    },
+    {
+      "type": "panels",
+      "id": "why",
+      "nav": "Why & risks",
+      "eyebrow": "Reading the architecture",
+      "title": "Why they built it this way, and where it creaks",
+      "panels": [
+        {
+          "tone": "good",
+          "title": "The likely reasoning",
+          "items": [
+            "**OpenRouter for breadth.** Product teams can try any new model without a new contract or SDK.",
+            "**Fireworks direct for the hot path.** Fine-tuned or high-volume open models run cheaper and faster on their own Fireworks account than anywhere else.",
+            "**Bedrock as the safety net.** It's governed, it draws down the AWS commit, and it's independent of the other two vendors if they fail.",
+            "**Homegrown budgets as the glue.** No single tool sees all three bills (OpenRouter credits, the Fireworks balance and the AWS invoice), so they wrote their own spend policy on top."
+          ]
+        },
+        {
+          "tone": "risk",
+          "title": "Where it gets fragile",
+          "items": [
+            "**Routers stacked on routers.** OpenRouter can already route to Fireworks and Bedrock. With their own logic on top, two layers may retry the same failure and multiply latency and cost.",
+            "**Fallback changes the model.** Falling back from a Fireworks Llama fine-tune to Claude on Bedrock is a different model. Outputs, tool-call format, context limits and cost per request all change.",
+            "**Three bills, one budget.** Budget code has to estimate spend per provider in real time, and reconcile later against invoices it doesn't control.",
+            "**Hidden money paths.** OpenRouter BYOK fallbacks can bill OpenRouter credits instead of the customer's own key.",
+            "**Ownership.** Someone on their team maintains pricing tables, retry logic and model maps forever."
+          ]
+        }
+      ]
+    },
+    {
+      "type": "beforeAfter",
+      "id": "vercel",
+      "nav": "Vercel fit",
+      "eyebrow": "Where Vercel fits",
+      "title": "AI Gateway can collapse the routing layer",
+      "intro": "Vercel AI Gateway is the same kind of product as OpenRouter: a router, not a kitchen. It lists both Fireworks and Amazon Bedrock as providers, charges provider list price with no token markup, and has no fee on BYOK. The pitch isn't \"replace Fireworks or Bedrock.\" It's \"replace the pile of routing and budget code between the app and the kitchens.\"",
+      "before": {
+        "label": "Today",
+        "rows": [
+          [
+            "App",
+            {
+              "arrow": "→"
+            },
+            {
+              "text": "Budget code",
+              "entity": "budget"
+            },
+            {
+              "arrow": "→"
+            },
+            "Routing code"
+          ],
+          [
+            {
+              "arrow": "↳"
+            },
+            {
+              "text": "OpenRouter",
+              "entity": "openrouter"
+            },
+            {
+              "arrow": "→"
+            },
+            "many providers"
+          ],
+          [
+            {
+              "arrow": "↳"
+            },
+            {
+              "text": "Fireworks direct",
+              "entity": "fireworks"
+            }
+          ],
+          [
+            {
+              "arrow": "↳"
+            },
+            {
+              "text": "Bedrock fallback",
+              "entity": "bedrock"
+            }
+          ]
+        ],
+        "footer": "3 bills · 2–3 retry layers · custom spend tracking"
+      },
+      "after": {
+        "label": "With AI Gateway",
+        "rows": [
+          [
+            "App (AI SDK or OpenAI client)",
+            {
+              "arrow": "→"
+            }
+          ],
+          {
+            "hub": {
+              "entity": "vercel",
+              "title": "Vercel AI Gateway",
+              "items": [
+                "Provider order per request, e.g. `order: ['fireworks','bedrock']`",
+                "Model fallbacks, plus provider retries by default",
+                "BYOK for their Bedrock and Fireworks accounts, no gateway fee",
+                "Budgets per team, project, API key or user. Over the cap returns HTTP 402",
+                "Spend reports grouped by user, tag, model or provider"
+              ]
+            }
+          },
+          [
+            {
+              "arrow": "↳"
+            },
+            {
+              "text": "Fireworks",
+              "entity": "fireworks"
+            },
+            {
+              "text": "Bedrock",
+              "entity": "bedrock"
+            },
+            "others"
+          ]
+        ],
+        "footer": "1 routing layer · 1 dashboard · budgets enforced at the edge of the call"
+      },
+      "caveat": "**Be precise about one gap.** AI Gateway budgets don't count BYOK spend. If the customer runs Bedrock on their own keys to burn the AWS commit, Gateway budgets won't cap that traffic, and they'd keep provider-side limits or some of their own budget logic for it. Also check that their Fireworks fine-tunes and dedicated deployments are reachable through BYOK before promising a full consolidation."
+    },
+    {
+      "type": "questions",
+      "id": "discovery",
+      "nav": "Discovery",
+      "eyebrow": "For your next call",
+      "title": "Discovery questions",
+      "items": [
+        {
+          "ask": "Who decides the route today: your code, OpenRouter, or both?",
+          "why": "Reveals stacked retries and where latency comes from."
+        },
+        {
+          "ask": "What triggers the Bedrock fallback, and which model do you fall back to?",
+          "why": "Errors, latency, cost, or data class? Same model or a different one?"
+        },
+        {
+          "ask": "Are you running fine-tunes or dedicated deployments on Fireworks?",
+          "why": "Decides whether Fireworks must stay a direct integration or can go through a gateway with BYOK."
+        },
+        {
+          "ask": "Is Bedrock there to burn an AWS commit, for compliance, or for uptime?",
+          "why": "Commit drawdown means BYOK, which changes how budgets work."
+        },
+        {
+          "ask": "What does a budget profile contain, and what happens when it runs out?",
+          "why": "Hard block, model downgrade, alert? Per team, per end customer, per feature?"
+        },
+        {
+          "ask": "How do you reconcile spend across OpenRouter, Fireworks and AWS today?",
+          "why": "The pain here is often the real buying trigger."
+        }
+      ]
+    },
+    {
+      "type": "quiz",
+      "id": "quiz",
+      "nav": "Quiz",
+      "eyebrow": "Check yourself",
+      "title": "Five-question quiz",
+      "questions": [
+        {
+          "prompt": "A fintech has a $5M AWS commit, wants Claude, and needs data to stay inside AWS. Which kitchen fits best?",
+          "options": [
+            "Fireworks serverless",
+            "Claude on AWS Bedrock",
+            "OpenRouter with ZDR",
+            "Claude Platform on AWS"
+          ],
+          "answer": 1,
+          "explain": "Bedrock processes data inside the AWS boundary and counts against AWS commitments. Claude Platform on AWS bills through AWS but is run by Anthropic, outside that boundary. Fireworks doesn't serve Claude."
+        },
+        {
+          "prompt": "A SaaS company wants a separate fine-tune of one open model for each of its 300 customers, at roughly base-model cost. What makes Fireworks a fit?",
+          "options": [
+            "Provisioned Throughput",
+            "Cross-region inference",
+            "The Auto Router",
+            "Multi-LoRA serving"
+          ],
+          "answer": 3,
+          "explain": "Multi-LoRA batches many small adapters onto one base model deployment, so cost doesn't grow with the number of fine-tunes. Provisioned Throughput and cross-region inference are Bedrock capacity features, and the Auto Router is OpenRouter's."
+        },
+        {
+          "prompt": "How does OpenRouter mainly make money on non-BYOK traffic?",
+          "options": [
+            "A fee when you buy credits",
+            "A markup on every token",
+            "Monthly seat licenses",
+            "Its own GPU fleet margins"
+          ],
+          "answer": 0,
+          "explain": "It passes through provider prices on inference and charges a fee on credit purchases. It doesn't run GPUs itself, so there's no fleet margin."
+        },
+        {
+          "prompt": "The customer falls back from a Fireworks Llama fine-tune to Claude on Bedrock. What's the biggest risk?",
+          "options": [
+            "Bedrock will reject the API key",
+            "OpenRouter double-charges",
+            "The response comes from a different model, so behavior and cost change",
+            "Data leaves AWS"
+          ],
+          "answer": 2,
+          "explain": "A fallback to a different model keeps the lights on, but output style, tool-call format, context limits and price per request can all change. Fallbacks need their own testing. Data leaving AWS isn't the issue here, since Bedrock keeps it inside."
+        },
+        {
+          "prompt": "The customer moves routing to Vercel AI Gateway but keeps Bedrock on their own keys (BYOK) to burn the AWS commit. What about budgets?",
+          "options": [
+            "Gateway budgets cap all of it automatically",
+            "BYOK traffic is blocked by budgets",
+            "Budgets only work with OpenRouter",
+            "BYOK spend isn't counted in Gateway budgets, so they still need limits for that traffic"
+          ],
+          "answer": 3,
+          "explain": "AI Gateway budgets exclude BYOK spend. They'd keep provider-side limits or some of their own budget logic for BYOK traffic, so don't promise that budgets cover everything."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "Amazon Bedrock: inference API, inference profiles, Provisioned Throughput",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/inference-api.html"
+    },
+    {
+      "title": "AWS: Bedrock cross-region inference for OpenAI models (Aug 2026)",
+      "url": "https://aws.amazon.com/about-aws/whats-new/2026/08/amazon-bedrock-cross-region-openai-v2"
+    },
+    {
+      "title": "Bedrock user guide document history (Mantle, model import)",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/doc-history.md"
+    },
+    {
+      "title": "AWS Startups: Bedrock vs Claude Platform on AWS vs direct API",
+      "url": "https://startups.aws.com/learn/build-ai-agents-that-scale-how-startups-should-choose-between-bedrock-claude-platform-and-direct-api"
+    },
+    {
+      "title": "AWS: Claude Platform on AWS",
+      "url": "https://aws.amazon.com/it/claude-platform/"
+    },
+    {
+      "title": "Fireworks pricing",
+      "url": "https://www.fireworks.ai/pricing"
+    },
+    {
+      "title": "Fireworks: Multi-LoRA",
+      "url": "https://fireworks.ai/blog/multi-lora"
+    },
+    {
+      "title": "Fireworks: FireAttention",
+      "url": "https://fireworks.ai/blog/fire-attention-serving-open-source-models-4x-faster-than-vllm-by-quantizing-with-no-tradeoffs"
+    },
+    {
+      "title": "Spheron: Fireworks pricing 2026 (batch at 50%)",
+      "url": "https://www.spheron.network/blog/fireworks-ai-pricing-2026-inference-api/"
+    },
+    {
+      "title": "Flexprice: Fireworks pricing index (prepaid billing change)",
+      "url": "https://flexprice.io/pricing-index/fireworks-ai"
+    },
+    {
+      "title": "OpenRouter FAQ: pricing, fees, BYOK, routing",
+      "url": "https://openrouter.ai/docs/faq.md"
+    },
+    {
+      "title": "OpenRouter BYOK fees and fallbacks guide (Aug 2026)",
+      "url": "https://aireiter.com/blog/openrouter-byok-fees-fallback-guide"
+    },
+    {
+      "title": "Vercel: How to build your own AI model router",
+      "url": "https://vercel.com/kb/guide/how-to-build-your-own-ai-model-router"
+    },
+    {
+      "title": "Vercel AI Gateway: budgets and spend limits",
+      "url": "https://vercel.com/docs/ai-gateway/budgets"
+    },
+    {
+      "title": "Vercel AI Gateway: pricing (BYOK excluded from budgets)",
+      "url": "https://vercel.com/docs/ai-gateway/pricing"
+    },
+    {
+      "title": "AI Gateway deep dive (provider list incl. Fireworks and Bedrock)",
+      "url": "https://rabinarayanpatra.com/blogs/vercel-ai-gateway-deep-dive"
+    }
+  ]
+}
