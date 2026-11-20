@@ -1,8 +1,9 @@
 # Field guide format
 
-Every guide is one JSON content file (`guides/<slug>.json`). The design lives only in
-`template.html`. `build.py` checks the content against the rules below and writes
-`dist/<slug>.html`.
+Every guide is one JSON content file (`<slug>.json`) kept in the user's own folder, not in
+the skill. The design lives only in the skill's `assets/template.html`. `scripts/build.py`
+checks the content against the rules below and writes `<slug>.html` next to it.
+`assets/example-ai-inference-routing.json` is a complete, valid example of every section.
 
 This file describes every part of a guide: what it's for, the fields it takes, how to
 write it, and the visual cue the template gives it.
@@ -31,7 +32,7 @@ write it, and the visual cue the template gives it.
 | `eyebrow` | yes | Small label above the headline: `Field guide · <topic> · <Mon YYYY>`. |
 | `researched` | yes | `YYYY-MM-DD`, the day the research was done. Shown in the footer. |
 | `footer` | no | Extra footer sentence, usually a reminder about how fast prices change. |
-| `published_url` | no | The artifact URL once published, so a rebuild can be republished in place. |
+| `published_url` | no | Where the page was published (an artifact link, a hosted URL), so a rebuild can be republished in place. |
 
 ### `entities`
 
@@ -352,7 +353,7 @@ green or red and shows the explanation.
 
 ---
 
-## 4. Visual system (owned by `template.html`)
+## 4. Visual system (owned by `assets/template.html`)
 
 Content files never set colors, fonts or spacing. For reference, the template provides:
 

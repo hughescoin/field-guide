@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""Build field guide pages from content files and the shared template.
+"""Build field guide pages from content files and the skill's shared template.
 
-    python3 build.py guides/my-topic.json     # validate and build one guide
-    python3 build.py --all                    # rebuild every guide in guides/
-    python3 build.py --check guides/x.json    # validate only, write nothing
+    python3 scripts/build.py my-topic.json            # validate and build one guide
+    python3 scripts/build.py ~/field-guides/          # rebuild every guide in a folder
+    python3 scripts/build.py --check my-topic.json    # validate only, write nothing
+    python3 scripts/build.py --fragment my-topic.json # page body only, for publishing
+                                                      # tools that add their own <html> wrapper
 
-Output goes to dist/<slug>.html (override with -o DIR). Uses only the standard library.
-The format is documented in reference/guide-format.md.
+Each guide is written next to its content file as <slug>.html (override with -o DIR).
+The template is found relative to this script (../assets/template.html), so the command
+works from any working directory. Standard library only, Python 3.8+.
+The content format is documented in references/guide-format.md.
 """
 from __future__ import annotations
 
@@ -17,9 +21,9 @@ import pathlib
 import re
 import sys
 
-HERE = pathlib.Path(__file__).resolve().parent
-TEMPLATE = HERE / "template.html"
-GUIDES = HERE / "guides"
+SKILL_DIR = pathlib.Path(__file__).resolve().parent.parent
+TEMPLATE = SKILL_DIR / "assets" / "template.html"
+BODY_MARKER = "<!-- field-guide:body -->"
 
 HUES = {"amber", "magenta", "teal", "green", "blue", "violet", "ink"}
 TONES = {"good", "risk", "neutral"}
@@ -302,7 +306,7 @@ def _validate_simulator(r: Report, w: str, s: dict, ent_ref, hue_ref) -> None:
                     r.err(cw, f"'{key}' names '{ref}', which is not a node or edge")
 
 
-def render(g: dict, template: str) -> str:
+def render(g: dict, template: str, fragment: bool = False) -> str:
     m = g["meta"]
     # JSON is embedded in a <script> tag: escape every "<" so content can't close it.
     data = json.dumps(g, ensure_ascii=False, indent=1).replace("<", "\\u003c")
@@ -311,30 +315,54 @@ def render(g: dict, template: str) -> str:
         "DESCRIPTION": html.escape(m.get("description", ""), quote=True),
         "DATA": data,
     }
-    return re.sub(r"\{\{(TITLE|DESCRIPTION|DATA)\}\}", lambda mo: values[mo.group(1)], template)
+    page = re.sub(r"\{\{(TITLE|DESCRIPTION|DATA)\}\}", lambda mo: values[mo.group(1)], template)
+    if fragment:
+        return page
+    # Full standalone document: opens the same in any browser, file viewer or host.
+    head, body = page.split(BODY_MARKER, 1)
+    return (
+        "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"
+        + head.strip() + "\n</head>\n<body>\n" + body.strip() + "\n</body>\n</html>\n"
+    )
+
+
+def collect(paths: list[str]) -> list[pathlib.Path]:
+    files: list[pathlib.Path] = []
+    for p in paths:
+        path = pathlib.Path(p).expanduser()
+        if path.is_dir():
+            files += sorted(path.glob("*.json"))
+        else:
+            files.append(path)
+    return files
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("files", nargs="*", help="content JSON files")
-    ap.add_argument("--all", action="store_true", help="build every guides/*.json")
+    ap.add_argument("paths", nargs="+", help="content JSON files, or folders of them")
     ap.add_argument("--check", action="store_true", help="validate only")
-    ap.add_argument("-o", "--out", default=str(HERE / "dist"), help="output directory (default: dist/)")
+    ap.add_argument("--fragment", action="store_true",
+                    help="write the page without <!doctype>/<html>/<head>/<body>, for hosts that add their own")
+    ap.add_argument("-o", "--out", help="output folder (default: next to each content file)")
+    ap.add_argument("--template", default=str(TEMPLATE), help="template file (default: the skill's assets/template.html)")
     args = ap.parse_args()
 
-    files = [pathlib.Path(f) for f in args.files]
-    if args.all:
-        files += sorted(GUIDES.glob("*.json"))
+    files = collect(args.paths)
     if not files:
-        ap.error("give one or more content files, or --all")
+        print("No .json content files found.", file=sys.stderr)
+        return 2
 
-    template = TEMPLATE.read_text(encoding="utf-8")
-    for ph in ("{{TITLE}}", "{{DATA}}"):
+    try:
+        template = pathlib.Path(args.template).read_text(encoding="utf-8")
+    except OSError as exc:
+        print(f"Can't read the template ({exc}). It should be at {TEMPLATE}.", file=sys.stderr)
+        return 2
+    for ph in ("{{TITLE}}", "{{DATA}}", BODY_MARKER):
         if ph not in template:
-            print(f"template.html is missing the {ph} placeholder", file=sys.stderr)
+            print(f"The template is missing {ph}.", file=sys.stderr)
             return 2
 
-    out_dir = pathlib.Path(args.out)
     failed = False
     for f in files:
         try:
@@ -355,15 +383,26 @@ def main() -> int:
         if args.check:
             print(f"✓ {f}: valid ({len(rep.warnings)} warning(s))")
             continue
-        page = render(g, template)
-        out_dir.mkdir(parents=True, exist_ok=True)
-        dest = out_dir / f"{g['meta']['slug']}.html"
-        dest.write_text(page, encoding="utf-8")
+        if args.out:
+            out_dir = pathlib.Path(args.out).expanduser()
+        elif SKILL_DIR in f.resolve().parents:
+            out_dir = pathlib.Path.cwd()  # never write into the skill's own folder
+        else:
+            out_dir = f.resolve().parent
+        name = g["meta"]["slug"] + (".fragment.html" if args.fragment else ".html")
+        dest = out_dir / name
+        try:
+            out_dir.mkdir(parents=True, exist_ok=True)
+            dest.write_text(render(g, template, args.fragment), encoding="utf-8")
+        except OSError as exc:
+            print(f"✗ {f}: can't write {dest} ({exc}). Pass -o with a folder you can write to.")
+            failed = True
+            continue
         size = dest.stat().st_size
         note = "  (over 1 MB; trim content)" if size > 1_000_000 else ""
         print(f"✓ {f} → {dest} ({size / 1024:.0f} KB, {len(rep.warnings)} warning(s)){note}")
         if g["meta"].get("published_url"):
-            print(f"  republish to {g['meta']['published_url']} to update the live page")
+            print(f"  previously published at {g['meta']['published_url']}; republish there to update it")
     return 1 if failed else 0
 
 
