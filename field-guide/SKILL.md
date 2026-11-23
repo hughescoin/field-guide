@@ -133,7 +133,7 @@ fields to `SECTION_FIELDS` in `scripts/build.py`, and its docs to `references/gu
 ## No Python available
 Build by hand with file tools: read `assets/template.html`, replace `{{TITLE}}` and
 `{{DESCRIPTION}}` with the meta values, replace `{{DATA}}` with the content JSON (change
-every `<` inside the JSON to `<`), and write the result as `<slug>.html` starting with
+every `<` inside the JSON to `\u003c`), and write the result as `<slug>.html` starting with
 `<!doctype html>`. Check the content against `references/guide-format.md` yourself, since
 nothing will validate it. If you can't write files at all, give the user the JSON and the
 build command to run later.
