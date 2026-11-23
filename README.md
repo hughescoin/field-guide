@@ -1,4 +1,4 @@
-# teach-me
+# field-guide
 
 Get a study guide for one concept or a list of them.
 
@@ -26,7 +26,7 @@ Codex, Cursor, Copilot, Gemini CLI, Windsurf and others). You don't need to clon
 repo first:
 
 ```
-npx skills add https://github.com/hughescoin/teach-me/tree/main/field-guide -g -y
+npx skills add https://github.com/hughescoin/field-guide/tree/main/field-guide -g -y
 ```
 
 For the Claude apps, or to install by hand, see the sections below.
@@ -34,8 +34,8 @@ For the Claude apps, or to install by hand, see the sections below.
 ## Get the skill
 
 ```
-git clone https://github.com/hughescoin/teach-me.git
-cd teach-me
+git clone https://github.com/hughescoin/field-guide.git
+cd field-guide
 ```
 
 Install it once for each place you work.
@@ -82,7 +82,7 @@ npx skills add ./field-guide -g -y
 Or straight from GitHub, without cloning:
 
 ```
-npx skills add https://github.com/hughescoin/teach-me/tree/main/field-guide -g -y
+npx skills add https://github.com/hughescoin/field-guide/tree/main/field-guide -g -y
 ```
 
 `-g` installs for your user account instead of only the current project. `-y` skips the
